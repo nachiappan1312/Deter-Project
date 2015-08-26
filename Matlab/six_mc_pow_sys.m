@@ -95,18 +95,19 @@ x(:,k+1) = sys_d.a*x(:,k)+sys_d.b*u(:,k);
 end
 
 figure;
-subplot(2,2,1);
+subplot(2,3,1);
 plot(time,x(1:12,1:s(2)))
 axis manual
 axis(ax_limits_1);
 title('State Trajectory of Discrete-Time Power System');
 
-subplot(2,2,3);
+subplot(2,3,4);
 plot(time,u(:,1:s(2)))
 axis manual
 axis(ax_limits_2);
 title('Control Inputs of Machines');
  
+orig_disc_states = x;
 %% Networked System
 h = 0; %network propogation delay threshold
 
@@ -132,7 +133,40 @@ z =zeros(18,s(2)+1);
 u = zeros(6,s(2)+1);
 z0 = [del';zeros(6,1);zeros(6,1)];
 z(:,1) = z0;
+
+
+%% Without security attack and just the delay is present
 for k = 1:s(2)
+    u(:,k) = -K*z(:,k);
+    z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
+end
+orig_net_states = z;
+subplot(2,3,2);
+plot(time,z(1:12,1:s(2)))
+axis manual
+axis(ax_limits_1);
+title('State Trajectory of Discrete Time Power system with Network delays');
+
+subplot(2,3,5);
+plot(time,u(:,1:s(2)))
+axis manual
+axis(ax_limits_2);
+title('Control Inputs of networked system');
+
+%% Network simulation with the attacks
+
+%Attack on the inter area nodes, 2-6 link is attacked.
+% states del2,w2,del6 and w6 should be zeros for the attack period%
+% strategy 1: assuming zero value for the missing states %
+
+% choose a random time instant %
+rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
+run = 0;
+for k = 1:s(2)
+    if k > rand_time_inst && k < rand_time_inst+1
+        z([2 6 7 12],k) = 0;
+        run = run +1;
+    end
     u(:,k) = -K*z(:,k);
 %     for j = 1:6
 %         if u(j,k) >1
@@ -142,18 +176,30 @@ for k = 1:s(2)
     z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
 end
 
-subplot(2,2,2);
+sec_att_states = z;
+
+subplot(2,3,3);
 plot(time,z(1:12,1:s(2)))
 axis manual
 axis(ax_limits_1);
-title('State Trajectory of Discrete Time Power system with Network delays');
+title('State Trajectory of Discrete Time Power system with security attack');
 
-subplot(2,2,4);
+subplot(2,3,6);
 plot(time,u(:,1:s(2)))
 axis manual
 axis(ax_limits_2);
-title('Control Inputs of networked system');
+title('Control Inputs of networked system with securtiy attack');
 
-
-
+hold on
+%% Plots of each state
+figure;
+for i = [1:1:12]
+    subplot(3,4,i)
+    plot(time,orig_disc_states(i,1:s(2)),'r',time,orig_net_states(i,1:s(2)),'g',time,sec_att_states(i,1:s(2)),'b');
+    legend(' Std Discrete System','Sys with ntwrk delays', 'Sys with security attack');
+    axis manual
+    axis(ax_limits_1);
+    title_str = sprintf('state %d',i);
+    title(title_str);
+end
 
