@@ -160,40 +160,41 @@ title('Control Inputs of networked system');
 % strategy 1: assuming zero value for the missing states %
 
 % choose a random time instant %
-rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
-run = 0;
-for k = 1:s(2)
-    if k > rand_time_inst && k < rand_time_inst+2
-        z([2 6 7 12],k) = 0;
-        run = run +1;
+for i = 1:1:10
+    rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
+    run = 0;
+    for k = 1:s(2)
+    if k > rand_time_inst && k < rand_time_inst+3
+    z([2 6 7 12],k) = 0;
+    run = run +1;
     end
     u(:,k) = -K*z(:,k);
-%     for j = 1:6
-%         if u(j,k) >1
-%             u(j,k) = 1;
-%         end
-%     end
+    %     for j = 1:6
+    %         if u(j,k) >1
+    %             u(j,k) = 1;
+    %         end
+    %     end
     z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
-end
+    end
 
-sec_att_states = z;
+    sec_att_states = z;
 
-subplot(2,3,3);
-plot(time,z(1:12,1:s(2)))
-axis manual
-axis(ax_limits_1);
-title('State Trajectory of Discrete Time Power system with security attack');
-
-subplot(2,3,6);
-plot(time,u(:,1:s(2)))
-axis manual
-axis(ax_limits_2);
-title('Control Inputs of networked system with securtiy attack');
-
-hold on
-%% Plots of each state
-figure;
-for i = [1:1:12]
+    % subplot(2,3,3);
+    % plot(time,z(1:12,1:s(2)))
+    % axis manual
+    % axis(ax_limits_1);
+    % title('State Trajectory of Discrete Time Power system with security attack');
+    % 
+    % subplot(2,3,6);
+    % plot(time,u(:,1:s(2)))
+    % axis manual
+    % axis(ax_limits_2);
+    % title('Control Inputs of networked system with securtiy attack');
+    % 
+    % hold on
+    %% Plots of each state
+    figure;
+    for i = [1:1:12]
     subplot(3,4,i)
     plot(time,orig_disc_states(i,1:s(2)),'r',time,orig_net_states(i,1:s(2)),'g',time,sec_att_states(i,1:s(2)),'b');
     %legend(' Std Discrete System','Sys with ntwrk delays', 'Sys with security attack');
@@ -201,7 +202,68 @@ for i = [1:1:12]
     axis(ax_limits_1);
     title_str = sprintf('state %d',i);
     title(title_str);
+    end
+    stitle = sprintf('Strategy 1 \nIndividual States of the System \n Data loss was at %.2f seconds',double(vpa(time(rand_time_inst),3)));
+    suptitle(stitle);
 end
-stitle = sprintf('State of the System \n Attack was at %d seconds',double(vpa(time(rand_time_inst),3)));
-suptitle(stitle);
 
+%Code to save the figures into the Result folder
+h = get(0,'children');
+for i = 1:length(h)
+    saveas(h(i),['Results/fig_strat1_2_' num2str(i)],'jpeg');
+end
+
+close all;
+% choose a random time instant %
+for i = 1:1:10
+    rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
+    run = 0;
+    for k = 1:s(2)
+    if k > rand_time_inst && k < rand_time_inst+3
+    z([2 6 7 12],k) = z([2 6 7 12],k-1);
+    run = run +1;
+    end
+    u(:,k) = -K*z(:,k);
+    %     for j = 1:6
+    %         if u(j,k) >1
+    %             u(j,k) = 1;
+    %         end
+    %     end
+    z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
+    end
+
+    sec_att_states = z;
+
+    % subplot(2,3,3);
+    % plot(time,z(1:12,1:s(2)))
+    % axis manual
+    % axis(ax_limits_1);
+    % title('State Trajectory of Discrete Time Power system with security attack');
+    % 
+    % subplot(2,3,6);
+    % plot(time,u(:,1:s(2)))
+    % axis manual
+    % axis(ax_limits_2);
+    % title('Control Inputs of networked system with securtiy attack');
+    % 
+    % hold on
+    %% Plots of each state
+    figure;
+    for i = [1:1:12]
+    subplot(3,4,i)
+    plot(time,orig_disc_states(i,1:s(2)),'r',time,orig_net_states(i,1:s(2)),'g',time,sec_att_states(i,1:s(2)),'b');
+    %legend(' Std Discrete System','Sys with ntwrk delays', 'Sys with security attack');
+    axis manual
+    axis(ax_limits_1);
+    title_str = sprintf('state %d',i);
+    title(title_str);
+    end
+    stitle = sprintf('Strategy 2 \nIndividual States of the System \n Data loss was at %.2f seconds',double(vpa(time(rand_time_inst),3)));
+    suptitle(stitle);
+end
+
+%Code to save the figures into the Result folder
+h = get(0,'children');
+for i = 1:length(h)
+    saveas(h(i),['Results/fig_strat2_2_' num2str(i)],'jpeg');
+end

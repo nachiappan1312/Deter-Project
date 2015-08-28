@@ -1,0 +1,479 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>six_mc_pow_sys</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-08-27"><meta name="DC.source" content="six_mc_pow_sys.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#2">Discrete Time System</a></li><li><a href="#3">Networked System</a></li><li><a href="#4">Without security attack and just the delay is present</a></li><li><a href="#5">Network simulation with the attacks</a></li><li><a href="#7">Plots of each state</a></li></ul></div><pre class="codeinput">clc;clear <span class="string">all</span>;
+close <span class="string">all</span>;
+
+ax_limits_1 = [0 12 -0.3 0.3];
+ax_limits_2 = [0 12 -0.3 0.2];
+
+<span class="comment">% Machine Parameters</span>
+M1 = 1;M2 = 1;M3 = 1;M4 = 2;M5 = 2;M6 = 2;
+M = diag([M1,M2,M3,M4,M5,M6]);
+
+E1 = 1;E2 = 1;E3 = 1;E4 = 1;E5 = 1;E6 = 1;
+
+<span class="comment">%Transmission line parameters</span>
+x12=.01;x23=.01;x31=.01;x45=0.05;x64=0.05;x56=0.05; x26 = 0.05;
+
+
+x = [0 0.01 0.01 0 0 0;0.01 0 0.01 0 0 0.05;0.01 0.01 0 0 0 0;0 0 0 0 0.05 0.05;0 0 0 0.05 0 0.05; 0 0.05 0 0.05 0.05 0];
+
+del10 = 0.1;del20 = 0.11;del30 = 0.105;del40 = 0.21;del50 = 0.205;del60 = 0.211;
+del = [0.1 0.11 0.105 0.21 0.205 0.211];
+
+<span class="comment">%Damping factors</span>
+
+d1=0;<span class="comment">%0.5;</span>
+d2=0;<span class="comment">%0.5;</span>
+d3=0;<span class="comment">%0.5;</span>
+d4=0;<span class="comment">%0.8;</span>
+d5=0;<span class="comment">%0.8;</span>
+d6=0;<span class="comment">%0.8</span>
+
+D = diag([d1,d2,d3,d4,d5,d6]);
+
+<span class="comment">%Machine Connectivity</span>
+T =[0 1 1 0 0 0; 1 0 1 0 0 1;1 1 0 0 0 0;0 0 0 0 1 1;0 0 0 1 0 1;0 1 0 1 1 0];
+
+<span class="comment">%Construct Laplacian</span>
+L = zeros(6,6);
+<span class="keyword">for</span> i = 1:6
+    <span class="keyword">for</span> j = 1:6
+        <span class="keyword">if</span> (T(i,j) ==1)
+            <span class="keyword">if</span>(i~=j)
+              L(i,j) = cos(del(i)-del(j))/x(i,j);
+            <span class="keyword">end</span>
+        <span class="keyword">else</span>
+           L(i,j) = 0;
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="keyword">for</span> i = 1:6
+    <span class="keyword">for</span> j= 1:6
+        <span class="keyword">if</span>(i~=j)
+            L(i,i) = L(i,i)-L(i,j);
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+Z = zeros(6,6);
+I = eye(6,6);
+
+<span class="comment">%Construct continous time state space</span>
+
+A = [Z I; inv(M)*L inv(M)*D];
+B = [Z;I];
+C = zeros(1,12);
+C(1,9) = 1;
+D = 0;
+
+sys = ss(A,B,C,D);
+</pre><h2>Discrete Time System<a name="2"></a></h2><pre class="codeinput">Ts = 0.01; <span class="comment">%sampling time</span>
+sys_d = c2d(sys,Ts,<span class="string">'zoh'</span>);
+Q = eye(12,12);
+R = eye(6,6);
+[dK,dS,dE] = dlqr(sys_d.a,sys_d.b,Q,R);
+
+time = 0:0.01:12;
+s = size(time);
+
+x =zeros(12,s(2)+1);
+u = zeros(6,s(2)+1);
+x0 = [del';zeros(6,1)];
+x(:,1) = x0;
+
+<span class="keyword">for</span> k = 1:s(2)
+    u(:,k) = -dK*x(:,k);
+<span class="comment">%     for j = 1:6</span>
+<span class="comment">%         if u(j,k) &gt;1</span>
+<span class="comment">%             u(j,k) = 1;</span>
+<span class="comment">%         end</span>
+
+<span class="comment">%Design the Discrete time state space</span>
+x(:,k+1) = sys_d.a*x(:,k)+sys_d.b*u(:,k);
+<span class="keyword">end</span>
+
+figure;
+subplot(2,3,1);
+plot(time,x(1:12,1:s(2)))
+axis <span class="string">manual</span>
+axis(ax_limits_1);
+title(<span class="string">'State Trajectory of Discrete-Time Power System'</span>);
+
+subplot(2,3,4);
+plot(time,u(:,1:s(2)))
+axis <span class="string">manual</span>
+axis(ax_limits_2);
+title(<span class="string">'Control Inputs of Machines'</span>);
+
+orig_disc_states = x;
+</pre><img vspace="5" hspace="5" src="six_mc_pow_sys_01.png" alt=""> <h2>Networked System<a name="3"></a></h2><pre class="codeinput">h = 0; <span class="comment">%network propogation delay threshold</span>
+
+
+efun = @(t)expm(A*t)*B;
+Ad = expm(A*Ts);
+Bd1 = integral(efun,0,h,<span class="string">'ArrayValued'</span>,true);
+Bd2 = integral(efun,h,Ts,<span class="string">'ArrayValued'</span>,true);
+
+Z1 = zeros(6,12); Z2 = zeros(6,6);
+Af = [Ad Bd2 ; Z1 Z2];
+Bf = [Bd1; eye(6,6)];
+<span class="comment">%DLQR Parameters</span>
+Q1 = eye(12,12); Q2 = zeros(12,6); Q3 = zeros(6,12); Q4 = eye(6,6);
+
+Q = [Q1 Q2;Q3 Q4];
+R = eye(6,6);
+
+[K] = vpa(dlqr(Af,Bf,Q,R),2);
+
+
+z =zeros(18,s(2)+1);
+u = zeros(6,s(2)+1);
+z0 = [del';zeros(6,1);zeros(6,1)];
+z(:,1) = z0;
+</pre><h2>Without security attack and just the delay is present<a name="4"></a></h2><pre class="codeinput"><span class="keyword">for</span> k = 1:s(2)
+    u(:,k) = -K*z(:,k);
+    z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
+<span class="keyword">end</span>
+orig_net_states = z;
+subplot(2,3,2);
+plot(time,z(1:12,1:s(2)))
+axis <span class="string">manual</span>
+axis(ax_limits_1);
+title(<span class="string">'State Trajectory of Discrete Time Power system with Network delays'</span>);
+
+subplot(2,3,5);
+plot(time,u(:,1:s(2)))
+axis <span class="string">manual</span>
+axis(ax_limits_2);
+title(<span class="string">'Control Inputs of networked system'</span>);
+</pre><img vspace="5" hspace="5" src="six_mc_pow_sys_02.png" alt=""> <h2>Network simulation with the attacks<a name="5"></a></h2><pre class="codeinput"><span class="comment">%Attack on the inter area nodes, 2-6 link is attacked.</span>
+<span class="comment">% states del2,w2,del6 and w6 should be zeros for the attack period%</span>
+<span class="comment">% strategy 1: assuming zero value for the missing states %</span>
+
+<span class="comment">% choose a random time instant %</span>
+<span class="keyword">for</span> i = 1:1:10
+</pre><pre class="codeinput">    rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
+    run = 0;
+    <span class="keyword">for</span> k = 1:s(2)
+    <span class="keyword">if</span> k &gt; rand_time_inst &amp;&amp; k &lt; rand_time_inst+2
+    z([2 6 7 12],k) = 0;
+    run = run +1;
+    <span class="keyword">end</span>
+    u(:,k) = -K*z(:,k);
+    <span class="comment">%     for j = 1:6</span>
+    <span class="comment">%         if u(j,k) &gt;1</span>
+    <span class="comment">%             u(j,k) = 1;</span>
+    <span class="comment">%         end</span>
+    <span class="comment">%     end</span>
+    z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
+    <span class="keyword">end</span>
+
+    sec_att_states = z;
+
+    <span class="comment">% subplot(2,3,3);</span>
+    <span class="comment">% plot(time,z(1:12,1:s(2)))</span>
+    <span class="comment">% axis manual</span>
+    <span class="comment">% axis(ax_limits_1);</span>
+    <span class="comment">% title('State Trajectory of Discrete Time Power system with security attack');</span>
+    <span class="comment">%</span>
+    <span class="comment">% subplot(2,3,6);</span>
+    <span class="comment">% plot(time,u(:,1:s(2)))</span>
+    <span class="comment">% axis manual</span>
+    <span class="comment">% axis(ax_limits_2);</span>
+    <span class="comment">% title('Control Inputs of networked system with securtiy attack');</span>
+    <span class="comment">%</span>
+    <span class="comment">% hold on</span>
+</pre><img vspace="5" hspace="5" src="six_mc_pow_sys_04.png" alt=""> <h2>Plots of each state<a name="7"></a></h2><pre class="codeinput">    figure;
+    <span class="keyword">for</span> i = [1:1:12]
+    subplot(3,4,i)
+    plot(time,orig_disc_states(i,1:s(2)),<span class="string">'r'</span>,time,orig_net_states(i,1:s(2)),<span class="string">'g'</span>,time,sec_att_states(i,1:s(2)),<span class="string">'b'</span>);
+    legend(<span class="string">' Std Discrete System'</span>,<span class="string">'Sys with ntwrk delays'</span>, <span class="string">'Sys with security attack'</span>);
+    axis <span class="string">manual</span>
+    axis(ax_limits_1);
+    title_str = sprintf(<span class="string">'state %d'</span>,i);
+    title(title_str);
+    <span class="keyword">end</span>
+    stitle = sprintf(<span class="string">'Individual States of the System \n Data loss was at %.2f seconds'</span>,double(vpa(time(rand_time_inst),3)));
+    suptitle(stitle);
+</pre><img vspace="5" hspace="5" src="six_mc_pow_sys_03.png" alt=""> <img vspace="5" hspace="5" src="six_mc_pow_sys_05.png" alt=""> <img vspace="5" hspace="5" src="six_mc_pow_sys_06.png" alt=""> <img vspace="5" hspace="5" src="six_mc_pow_sys_07.png" alt=""> <img vspace="5" hspace="5" src="six_mc_pow_sys_08.png" alt=""> <img vspace="5" hspace="5" src="six_mc_pow_sys_09.png" alt=""> <img vspace="5" hspace="5" src="six_mc_pow_sys_10.png" alt=""> <img vspace="5" hspace="5" src="six_mc_pow_sys_11.png" alt=""> <img vspace="5" hspace="5" src="six_mc_pow_sys_12.png" alt=""> <img vspace="5" hspace="5" src="six_mc_pow_sys_13.png" alt=""> <img vspace="5" hspace="5" src="six_mc_pow_sys_14.png" alt=""> <pre class="codeinput"><span class="keyword">end</span>
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+clc;clear all;
+close all;
+
+ax_limits_1 = [0 12 -0.3 0.3];
+ax_limits_2 = [0 12 -0.3 0.2];
+
+% Machine Parameters
+M1 = 1;M2 = 1;M3 = 1;M4 = 2;M5 = 2;M6 = 2;
+M = diag([M1,M2,M3,M4,M5,M6]);
+
+E1 = 1;E2 = 1;E3 = 1;E4 = 1;E5 = 1;E6 = 1;
+
+%Transmission line parameters
+x12=.01;x23=.01;x31=.01;x45=0.05;x64=0.05;x56=0.05; x26 = 0.05;
+
+
+x = [0 0.01 0.01 0 0 0;0.01 0 0.01 0 0 0.05;0.01 0.01 0 0 0 0;0 0 0 0 0.05 0.05;0 0 0 0.05 0 0.05; 0 0.05 0 0.05 0.05 0];
+
+del10 = 0.1;del20 = 0.11;del30 = 0.105;del40 = 0.21;del50 = 0.205;del60 = 0.211;
+del = [0.1 0.11 0.105 0.21 0.205 0.211];
+
+%Damping factors
+
+d1=0;%0.5;
+d2=0;%0.5;
+d3=0;%0.5;
+d4=0;%0.8;
+d5=0;%0.8;
+d6=0;%0.8
+
+D = diag([d1,d2,d3,d4,d5,d6]);
+
+%Machine Connectivity
+T =[0 1 1 0 0 0; 1 0 1 0 0 1;1 1 0 0 0 0;0 0 0 0 1 1;0 0 0 1 0 1;0 1 0 1 1 0];
+
+%Construct Laplacian
+L = zeros(6,6);
+for i = 1:6
+    for j = 1:6
+        if (T(i,j) ==1)
+            if(i~=j)
+              L(i,j) = cos(del(i)-del(j))/x(i,j);                   
+            end
+        else
+           L(i,j) = 0;
+        end
+    end
+end
+
+for i = 1:6
+    for j= 1:6
+        if(i~=j)
+            L(i,i) = L(i,i)-L(i,j);
+        end
+    end
+end
+
+Z = zeros(6,6);
+I = eye(6,6);
+
+%Construct continous time state space 
+
+A = [Z I; inv(M)*L inv(M)*D];
+B = [Z;I];
+C = zeros(1,12);
+C(1,9) = 1;
+D = 0;
+
+sys = ss(A,B,C,D);
+
+%% Discrete Time System
+Ts = 0.01; %sampling time
+sys_d = c2d(sys,Ts,'zoh');
+Q = eye(12,12);
+R = eye(6,6);
+[dK,dS,dE] = dlqr(sys_d.a,sys_d.b,Q,R);
+
+time = 0:0.01:12;
+s = size(time);
+
+x =zeros(12,s(2)+1);
+u = zeros(6,s(2)+1);
+x0 = [del';zeros(6,1)];
+x(:,1) = x0;
+
+for k = 1:s(2)
+    u(:,k) = -dK*x(:,k);
+%     for j = 1:6
+%         if u(j,k) >1
+%             u(j,k) = 1;
+%         end
+
+%Design the Discrete time state space
+x(:,k+1) = sys_d.a*x(:,k)+sys_d.b*u(:,k);
+end
+
+figure;
+subplot(2,3,1);
+plot(time,x(1:12,1:s(2)))
+axis manual
+axis(ax_limits_1);
+title('State Trajectory of Discrete-Time Power System');
+
+subplot(2,3,4);
+plot(time,u(:,1:s(2)))
+axis manual
+axis(ax_limits_2);
+title('Control Inputs of Machines');
+ 
+orig_disc_states = x;
+%% Networked System
+h = 0; %network propogation delay threshold
+
+
+efun = @(t)expm(A*t)*B;
+Ad = expm(A*Ts);
+Bd1 = integral(efun,0,h,'ArrayValued',true);
+Bd2 = integral(efun,h,Ts,'ArrayValued',true);
+
+Z1 = zeros(6,12); Z2 = zeros(6,6);
+Af = [Ad Bd2 ; Z1 Z2]; 
+Bf = [Bd1; eye(6,6)];
+%DLQR Parameters
+Q1 = eye(12,12); Q2 = zeros(12,6); Q3 = zeros(6,12); Q4 = eye(6,6);
+
+Q = [Q1 Q2;Q3 Q4];
+R = eye(6,6);
+
+[K] = vpa(dlqr(Af,Bf,Q,R),2);
+
+
+z =zeros(18,s(2)+1);
+u = zeros(6,s(2)+1);
+z0 = [del';zeros(6,1);zeros(6,1)];
+z(:,1) = z0;
+
+
+%% Without security attack and just the delay is present
+for k = 1:s(2)
+    u(:,k) = -K*z(:,k);
+    z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
+end
+orig_net_states = z;
+subplot(2,3,2);
+plot(time,z(1:12,1:s(2)))
+axis manual
+axis(ax_limits_1);
+title('State Trajectory of Discrete Time Power system with Network delays');
+
+subplot(2,3,5);
+plot(time,u(:,1:s(2)))
+axis manual
+axis(ax_limits_2);
+title('Control Inputs of networked system');
+
+%% Network simulation with the attacks
+
+%Attack on the inter area nodes, 2-6 link is attacked.
+% states del2,w2,del6 and w6 should be zeros for the attack period%
+% strategy 1: assuming zero value for the missing states %
+
+% choose a random time instant %
+for i = 1:1:10
+    rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
+    run = 0;
+    for k = 1:s(2)
+    if k > rand_time_inst && k < rand_time_inst+2
+    z([2 6 7 12],k) = 0;
+    run = run +1;
+    end
+    u(:,k) = -K*z(:,k);
+    %     for j = 1:6
+    %         if u(j,k) >1
+    %             u(j,k) = 1;
+    %         end
+    %     end
+    z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
+    end
+
+    sec_att_states = z;
+
+    % subplot(2,3,3);
+    % plot(time,z(1:12,1:s(2)))
+    % axis manual
+    % axis(ax_limits_1);
+    % title('State Trajectory of Discrete Time Power system with security attack');
+    % 
+    % subplot(2,3,6);
+    % plot(time,u(:,1:s(2)))
+    % axis manual
+    % axis(ax_limits_2);
+    % title('Control Inputs of networked system with securtiy attack');
+    % 
+    % hold on
+    %% Plots of each state
+    figure;
+    for i = [1:1:12]
+    subplot(3,4,i)
+    plot(time,orig_disc_states(i,1:s(2)),'r',time,orig_net_states(i,1:s(2)),'g',time,sec_att_states(i,1:s(2)),'b');
+    legend(' Std Discrete System','Sys with ntwrk delays', 'Sys with security attack');
+    axis manual
+    axis(ax_limits_1);
+    title_str = sprintf('state %d',i);
+    title(title_str);
+    end
+    stitle = sprintf('Individual States of the System \n Data loss was at %.2f seconds',double(vpa(time(rand_time_inst),3)));
+    suptitle(stitle);
+end
+
+##### SOURCE END #####
+--></body></html>
