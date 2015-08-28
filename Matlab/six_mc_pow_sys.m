@@ -69,8 +69,8 @@ D = 0;
 sys = ss(A,B,C,D);
 
 %% Discrete Time System
-Ts = 0.01 %sampling time
-sys_d = c2d(sys,Ts,'zoh')
+Ts = 0.01; %sampling time
+sys_d = c2d(sys,Ts,'zoh');
 Q = eye(12,12);
 R = eye(6,6);
 [dK,dS,dE] = dlqr(sys_d.a,sys_d.b,Q,R);
@@ -126,7 +126,7 @@ Q1 = eye(12,12); Q2 = zeros(12,6); Q3 = zeros(6,12); Q4 = eye(6,6);
 Q = [Q1 Q2;Q3 Q4];
 R = eye(6,6);
 
-[K] = vpa(dlqr(Af,Bf,Q,R),2)
+[K] = vpa(dlqr(Af,Bf,Q,R),2);
 
 
 z =zeros(18,s(2)+1);
@@ -163,7 +163,7 @@ title('Control Inputs of networked system');
 rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
 run = 0;
 for k = 1:s(2)
-    if k > rand_time_inst && k < rand_time_inst+1
+    if k > rand_time_inst && k < rand_time_inst+2
         z([2 6 7 12],k) = 0;
         run = run +1;
     end
@@ -196,10 +196,12 @@ figure;
 for i = [1:1:12]
     subplot(3,4,i)
     plot(time,orig_disc_states(i,1:s(2)),'r',time,orig_net_states(i,1:s(2)),'g',time,sec_att_states(i,1:s(2)),'b');
-    legend(' Std Discrete System','Sys with ntwrk delays', 'Sys with security attack');
+    %legend(' Std Discrete System','Sys with ntwrk delays', 'Sys with security attack');
     axis manual
     axis(ax_limits_1);
     title_str = sprintf('state %d',i);
     title(title_str);
 end
+stitle = sprintf('State of the System \n Attack was at %d seconds',double(vpa(time(rand_time_inst),3)));
+suptitle(stitle);
 
