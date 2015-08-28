@@ -1,6 +1,18 @@
 clc;clear all;
 close all;
 
+%Result Folders
+
+%Par_folder = input('Result Folder Name :','s');
+strat1 = input('Strategy_1 Resul
+mkdir('Results\',strat1)
+Strat2_folder = strcat(Par_folder,'\Strat2')
+
+%Creating Folders
+mkdir('Results',Par_folder);
+mkdir(['Results\' Par_folder],'Strat1')
+mkdir(['Results\' Par_folder],'Strat2')
+
 ax_limits_1 = [0 12 -0.3 0.3];
 ax_limits_2 = [0 12 -0.3 0.2];
 
@@ -203,14 +215,15 @@ for i = 1:1:10
     title_str = sprintf('state %d',i);
     title(title_str);
     end
-    stitle = sprintf('Individual States of the System \n Data loss was at %.2f seconds',double(vpa(time(rand_time_inst),3)));
+    stitle = sprintf('Strategy 1 \nIndividual States of the System \n Data loss was at %.2f seconds',double(vpa(time(rand_time_inst),3)));
     suptitle(stitle);
 end
 
 %Code to save the figures into the Result folder
 h = get(0,'children');
+
 for i = 1:length(h)
-    saveas(h(i),['Results/fig_2_' num2str(i)],'jpeg');
+    saveas(h(i),[Strat1_folder '\fig' num2str(i)],'jpeg');
 end
 
 close all;
@@ -219,8 +232,8 @@ for i = 1:1:10
     rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
     run = 0;
     for k = 1:s(2)
-    if k > rand_time_inst && k < rand_time_inst+3
-    z([2 6 7 12],k) = 0;
+    if k > rand_time_inst && k < rand_time_inst+6
+    z([2 6 7 12],k) = z([2 6 7 12],k-1);
     run = run +1;
     end
     u(:,k) = -K*z(:,k);
@@ -258,12 +271,12 @@ for i = 1:1:10
     title_str = sprintf('state %d',i);
     title(title_str);
     end
-    stitle = sprintf('Individual States of the System \n Data loss was at %.2f seconds',double(vpa(time(rand_time_inst),3)));
+    stitle = sprintf('Strategy 2 \nIndividual States of the System \n Data loss was at %.2f seconds',double(vpa(time(rand_time_inst),3)));
     suptitle(stitle);
 end
 
 %Code to save the figures into the Result folder
 h = get(0,'children');
 for i = 1:length(h)
-    saveas(h(i),['Results/fig_2_' num2str(i)],'jpeg');
+    saveas(h(i),[Strat2_folder '\fig' num2str(i)],'jpeg');
 end

@@ -1,6 +1,16 @@
 clc;clear all;
 close all;
 
+%Result Folders
+
+%Par_folder = input('Result Folder Name :','s');
+strat1 = input('Strategy_1 Result Folder : ', 's')
+mkdir('Results',strat1);
+Strat1_folder = strcat('Results\',strat1);
+strat2 = input('Strategy_2 Result Folder : ', 's')
+mkdir('Results',strat2);
+Strat2_folder = strcat('Results\',strat2);
+
 ax_limits_1 = [0 12 -0.3 0.3];
 ax_limits_2 = [0 12 -0.3 0.2];
 
@@ -160,6 +170,7 @@ title('Control Inputs of networked system');
 % strategy 1: assuming zero value for the missing states %
 
 % choose a random time instant %
+
 for i = 1:1:10
     rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
     run = 0;
@@ -209,8 +220,9 @@ end
 
 %Code to save the figures into the Result folder
 h = get(0,'children');
+
 for i = 1:length(h)
-    saveas(h(i),['Results/fig_strat1_2_' num2str(i)],'jpeg');
+    saveas(h(i),[Strat1_folder '\fig' num2str(i)],'jpeg');
 end
 
 close all;
@@ -219,7 +231,7 @@ for i = 1:1:10
     rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
     run = 0;
     for k = 1:s(2)
-    if k > rand_time_inst && k < rand_time_inst+3
+    if k > rand_time_inst && k < rand_time_inst+6
     z([2 6 7 12],k) = z([2 6 7 12],k-1);
     run = run +1;
     end
@@ -265,5 +277,5 @@ end
 %Code to save the figures into the Result folder
 h = get(0,'children');
 for i = 1:length(h)
-    saveas(h(i),['Results/fig_strat2_2_' num2str(i)],'jpeg');
+    saveas(h(i),[Strat2_folder '\fig' num2str(i)],'jpeg');
 end
