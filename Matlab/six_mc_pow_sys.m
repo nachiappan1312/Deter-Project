@@ -95,15 +95,10 @@ x(:,1) = x0;
 
 for k = 1:s(2)
     u(:,k) = -dK*x(:,k);
-%     for j = 1:6
-%         if u(j,k) >1
-%             u(j,k) = 1;
-%         end
-
 %Design the Discrete time state space
 x(:,k+1) = sys_d.a*x(:,k)+sys_d.b*u(:,k);
 end
-
+J = calc_cost(x,u,Q,R)
 figure;
 subplot(2,3,1);
 plot(time,x(1:12,1:s(2)))
@@ -171,7 +166,7 @@ title('Control Inputs of networked system');
 
 % choose a random time instant %
 
-for i = 1:1:10
+for i = 1:1:no_of_runs
     rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
     run = 0;
     for k = 1:s(2)
@@ -227,7 +222,7 @@ end
 
 close all;
 % choose a random time instant %
-for i = 1:1:10
+for i = 1:1:no_of_runs
     rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
     run = 0;
     for k = 1:s(2)
