@@ -1,3 +1,17 @@
+Skip to content
+This repository  
+Pull requests
+Issues
+Gist
+ @nachiappan1312
+ Unwatch 1
+  Star 0
+  Fork 0
+nachiappan1312/Deter-Project
+Branch: master  Deter-Project/Matlab/six_mc_pow_sys.m
+@nachiappan1312nachiappan1312 2 days ago The Interia of mac 2 is 0.1
+1 contributor
+RawBlameHistory    292 lines (240 sloc)  7.512 kB
 clc;clear all;
 close all;
 
@@ -10,12 +24,15 @@ Strat1_folder = strcat('Results\',strat1);
 strat2 = input('Strategy_2 Result Folder : ', 's')
 mkdir('Results',strat2);
 Strat2_folder = strcat('Results\',strat2);
+duration = input('Duration of Attack: ');
 
 ax_limits_1 = [0 12 -0.3 0.3];
 ax_limits_2 = [0 12 -0.3 0.2];
 
 % Machine Parameters
 M1 = 1;M2 = 1;M3 = 1;M4 = 2;M5 = 2;M6 = 2;
+
+M2 = 0.1; % Reduced Inertia
 M = diag([M1,M2,M3,M4,M5,M6]);
 
 E1 = 1;E2 = 1;E3 = 1;E4 = 1;E5 = 1;E6 = 1;
@@ -31,12 +48,7 @@ del = [0.1 0.11 0.105 0.21 0.205 0.211];
 
 %Damping factors
 
-d1=0;%0.5;
-d2=0;%0.5;
-d3=0;%0.5;
-d4=0;%0.8;
-d5=0;%0.8;
-d6=0;%0.8
+d1=0; d2=0; d3=0; d4=0; d5=0; d6=0;
 
 D = diag([d1,d2,d3,d4,d5,d6]);
 
@@ -95,18 +107,23 @@ x(:,1) = x0;
 
 for k = 1:s(2)
     u(:,k) = -dK*x(:,k);
+%     for j = 1:6
+%         if u(j,k) >1
+%             u(j,k) = 1;
+%         end
+
 %Design the Discrete time state space
 x(:,k+1) = sys_d.a*x(:,k)+sys_d.b*u(:,k);
 end
-J = calc_cost(x,u,Q,R)
+
 figure;
-subplot(2,3,1);
+subplot(2,2,1);
 plot(time,x(1:12,1:s(2)))
 axis manual
 axis(ax_limits_1);
 title('State Trajectory of Discrete-Time Power System');
 
-subplot(2,3,4);
+subplot(2,2,3);
 plot(time,u(:,1:s(2)))
 axis manual
 axis(ax_limits_2);
@@ -146,31 +163,35 @@ for k = 1:s(2)
     z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
 end
 orig_net_states = z;
-subplot(2,3,2);
+subplot(2,2,2);
 plot(time,z(1:12,1:s(2)))
 axis manual
 axis(ax_limits_1);
 title('State Trajectory of Discrete Time Power system with Network delays');
 
-subplot(2,3,5);
+subplot(2,2,4);
 plot(time,u(:,1:s(2)))
 axis manual
 axis(ax_limits_2);
 title('Control Inputs of networked system');
+
+%Code to save the figures into the Result folder
+print([Strat1_folder '\state_trajectory'],'-dpng','-r300');
+close all
 
 %% Network simulation with the attacks
 
 %Attack on the inter area nodes, 2-6 link is attacked.
 % states del2,w2,del6 and w6 should be zeros for the attack period%
 % strategy 1: assuming zero value for the missing states %
-
+%% Strategy 1 - Using zero value for all the missed states
 % choose a random time instant %
 
-for i = 1:1:no_of_runs
+for j = 1:1:10
     rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
     run = 0;
     for k = 1:s(2)
-    if k > rand_time_inst && k < rand_time_inst+3
+    if k > rand_time_inst && k < rand_time_inst+duration+1
     z([2 6 7 12],k) = 0;
     run = run +1;
     end
@@ -209,24 +230,28 @@ for i = 1:1:no_of_runs
     title_str = sprintf('state %d',i);
     title(title_str);
     end
-    stitle = sprintf('Strategy 1 \nIndividual States of the System \n Data loss was at %.2f seconds',double(vpa(time(rand_time_inst),3)));
+    stitle = sprintf('Strategy 1 \nIndividual States of the System \n Data loss was at %.2f seconds\n Duration of Attack is %d',double(vpa(time(rand_time_inst),3)),duration);
     suptitle(stitle);
+    %Code to save the figures into the Result folder
+    print([Strat1_folder '\fig' num2str(j)],'-dpng','-r300');
+    close all
 end
 
 %Code to save the figures into the Result folder
-h = get(0,'children');
-
-for i = 1:length(h)
-    saveas(h(i),[Strat1_folder '\fig' num2str(i)],'jpeg');
-end
+% h = get(0,'children');
+% 
+% for i = 1:length(h)
+%     saveas(h(i),[Strat1_folder '\fig' num2str(i)],'jpeg');
+% end
 
 close all;
+%% Strategy 2 - Using the sample from previous time instant
 % choose a random time instant %
-for i = 1:1:no_of_runs
+for j = 1:1:10
     rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
     run = 0;
     for k = 1:s(2)
-    if k > rand_time_inst && k < rand_time_inst+6
+    if k > rand_time_inst && k < rand_time_inst+duration+1
     z([2 6 7 12],k) = z([2 6 7 12],k-1);
     run = run +1;
     end
@@ -265,12 +290,16 @@ for i = 1:1:no_of_runs
     title_str = sprintf('state %d',i);
     title(title_str);
     end
-    stitle = sprintf('Strategy 2 \nIndividual States of the System \n Data loss was at %.2f seconds',double(vpa(time(rand_time_inst),3)));
+    stitle = sprintf('Strategy 2 \nIndividual States of the System \n Data loss was at %.2f seconds\n Duration of Attack is %d',double(vpa(time(rand_time_inst),3)),duration);
     suptitle(stitle);
+    
+    %Code to save the figures into the Result folder
+    print([Strat2_folder '\fig' num2str(j)],'-dpng','-r300');
+    close all
 end
 
-%Code to save the figures into the Result folder
-h = get(0,'children');
-for i = 1:length(h)
-    saveas(h(i),[Strat2_folder '\fig' num2str(i)],'jpeg');
-end
+
+% h = get(0,'children');
+% for i = 1:length(h)
+%     saveas(h(i),[Strat2_folder '\fig' num2str(i)],'jpeg');
+% end
