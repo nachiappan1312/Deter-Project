@@ -1,17 +1,3 @@
-Skip to content
-This repository  
-Pull requests
-Issues
-Gist
- @nachiappan1312
- Unwatch 1
-  Star 0
-  Fork 0
-nachiappan1312/Deter-Project
-Branch: master  Deter-Project/Matlab/six_mc_pow_sys.m
-@nachiappan1312nachiappan1312 2 days ago The Interia of mac 2 is 0.1
-1 contributor
-RawBlameHistory    292 lines (240 sloc)  7.512 kB
 clc;clear all;
 close all;
 
@@ -25,6 +11,7 @@ strat2 = input('Strategy_2 Result Folder : ', 's')
 mkdir('Results',strat2);
 Strat2_folder = strcat('Results\',strat2);
 duration = input('Duration of Attack: ');
+no_of_runs = input('Number of Runs: ');
 
 ax_limits_1 = [0 12 -0.3 0.3];
 ax_limits_2 = [0 12 -0.3 0.2];
@@ -105,6 +92,7 @@ u = zeros(6,s(2)+1);
 x0 = [del';zeros(6,1)];
 x(:,1) = x0;
 
+% Dynamic simulation of the power system
 for k = 1:s(2)
     u(:,k) = -dK*x(:,k);
 %     for j = 1:6
@@ -115,7 +103,7 @@ for k = 1:s(2)
 %Design the Discrete time state space
 x(:,k+1) = sys_d.a*x(:,k)+sys_d.b*u(:,k);
 end
-
+J = calc_cost(x,u,Q,R)
 figure;
 subplot(2,2,1);
 plot(time,x(1:12,1:s(2)))
@@ -187,7 +175,7 @@ close all
 %% Strategy 1 - Using zero value for all the missed states
 % choose a random time instant %
 
-for j = 1:1:10
+for j = 1:1:no_of_runs
     rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
     run = 0;
     for k = 1:s(2)
@@ -196,12 +184,7 @@ for j = 1:1:10
     run = run +1;
     end
     u(:,k) = -K*z(:,k);
-    %     for j = 1:6
-    %         if u(j,k) >1
-    %             u(j,k) = 1;
-    %         end
-    %     end
-    z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
+       z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
     end
 
     sec_att_states = z;
@@ -220,6 +203,9 @@ for j = 1:1:10
     % 
     % hold on
     %% Plots of each state
+    
+    % Calcualate the Cost function J
+    J = calc_cost(z,u,Q,R);
     figure;
     for i = [1:1:12]
     subplot(3,4,i)
@@ -230,7 +216,7 @@ for j = 1:1:10
     title_str = sprintf('state %d',i);
     title(title_str);
     end
-    stitle = sprintf('Strategy 1 \nIndividual States of the System \n Data loss was at %.2f seconds\n Duration of Attack is %d',double(vpa(time(rand_time_inst),3)),duration);
+    stitle = sprintf('Strategy 1 \nIndividual States of the System \n Data loss was at %.2f seconds\n Duration of Attack is %d. The Quadratic Cost J = %d.',double(vpa(time(rand_time_inst),3)),duration,J);
     suptitle(stitle);
     %Code to save the figures into the Result folder
     print([Strat1_folder '\fig' num2str(j)],'-dpng','-r300');
@@ -247,7 +233,7 @@ end
 close all;
 %% Strategy 2 - Using the sample from previous time instant
 % choose a random time instant %
-for j = 1:1:10
+for j = 1:1:no_of_runs
     rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
     run = 0;
     for k = 1:s(2)
@@ -280,6 +266,9 @@ for j = 1:1:10
     % 
     % hold on
     %% Plots of each state
+    %Calcuate the Quadratic cost
+    J = calc_cost(z,u,Q,R);
+    
     figure;
     for i = [1:1:12]
     subplot(3,4,i)
@@ -290,7 +279,7 @@ for j = 1:1:10
     title_str = sprintf('state %d',i);
     title(title_str);
     end
-    stitle = sprintf('Strategy 2 \nIndividual States of the System \n Data loss was at %.2f seconds\n Duration of Attack is %d',double(vpa(time(rand_time_inst),3)),duration);
+    stitle = sprintf('Strategy 2 \nIndividual States of the System \n Data loss was at %.2f seconds\n Duration of Attack is %d. The Quadratic Cost J = %d.',double(vpa(time(rand_time_inst),3)),duration,J);
     suptitle(stitle);
     
     %Code to save the figures into the Result folder
