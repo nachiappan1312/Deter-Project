@@ -1,18 +1,41 @@
 clc;clear all;
 close all;
-
+tic;
+%Inputs
+strat1 = 'Sep1_Strat1_Run1';
+strat2 = 'Sep1_Strat2_Run1';
+duration = 1; % duration of attack
+no_of_runs = 10; % 10 different time instants
+no_of_durations = 10; % 1 - 10 samples
+res_file = 'Results_Sheet.csv';
 %Result Folders
 
 %Par_folder = input('Result Folder Name :','s');
-strat1 = input('Strategy_1 Result Folder : ', 's')
+%strat1 = input('Strategy_1 Result Folder : ', 's')
 mkdir('Results',strat1);
 Strat1_folder = strcat('Results\',strat1);
-strat2 = input('Strategy_2 Result Folder : ', 's')
+%strat2 = input('Strategy_2 Result Folder : ', 's')
 mkdir('Results',strat2);
 Strat2_folder = strcat('Results\',strat2);
-duration = input('Duration of Attack: ');
-no_of_runs = input('Number of Runs: ');
+%duration = input('Duration of Attack: ');
+%no_of_runs = input('Number of Runs: ');
 
+tot_no_of_runs = no_of_runs*no_of_durations;
+% Output matrix to excel sheet%
+Result_Matrix = zeros(tot_no_of_runs,5); % Entire Result Matrix
+
+Output_Matrix = zeros(no_of_runs,5);   % n x 5 output matrix for each duration 
+Output_Matrix(1,:) = 1:1:no_of_runs;   % col 1 - No of  runs 
+Time_of_attack =  0.1:(0.8-0.1)/(no_of_runs-1):0.8;  %Time of attack is equally spread among 0.1 and 0.8
+Output_Matrix(2,:) = Time_of_attack; % Col 2 - Time of attack
+duration_of_attack = duration *ones(no_of_runs,1);  % Duration of attack - No of samples
+Output_Matrix(3,:) = duration_of_attack; % Col 3 - Duration of attack
+Strategy_1_J = zeros(no_of_runs,1); 
+Output_Matrix(4,:) = Time_of_attack; % Col 4 - Strategy 1 quadratic cost
+Strategy_2_J = zeros(no_of_runs,1); 
+Output_Matrix(4,:) = Time_of_attack; % Col 5 - Strategy 2 quadratic cost
+
+%Figure axis limit properties
 ax_limits_1 = [0 12 -0.3 0.3];
 ax_limits_2 = [0 12 -0.3 0.2];
 
@@ -54,7 +77,7 @@ for i = 1:6
            L(i,j) = 0;
         end
     end
-end
+ end
 
 for i = 1:6
     for j= 1:6
@@ -95,13 +118,8 @@ x(:,1) = x0;
 % Dynamic simulation of the power system
 for k = 1:s(2)
     u(:,k) = -dK*x(:,k);
-%     for j = 1:6
-%         if u(j,k) >1
-%             u(j,k) = 1;
-%         end
-
-%Design the Discrete time state space
-x(:,k+1) = sys_d.a*x(:,k)+sys_d.b*u(:,k);
+    %Design the Discrete time state space
+    x(:,k+1) = sys_d.a*x(:,k)+sys_d.b*u(:,k);
 end
 J = calc_cost(x,u,Q,R)
 figure;
@@ -109,14 +127,14 @@ subplot(2,2,1);
 plot(time,x(1:12,1:s(2)))
 axis manual
 axis(ax_limits_1);
-title('State Trajectory of Discrete-Time Power System');
+title('States of Discrete-Time Power System');
 
 subplot(2,2,3);
 plot(time,u(:,1:s(2)))
 axis manual
 axis(ax_limits_2);
 title('Control Inputs of Machines');
- 
+
 orig_disc_states = x;
 %% Networked System
 h = 0; %network propogation delay threshold
@@ -155,7 +173,7 @@ subplot(2,2,2);
 plot(time,z(1:12,1:s(2)))
 axis manual
 axis(ax_limits_1);
-title('State Trajectory of Discrete Time Power system with Network delays');
+title('State of Discrete Time Power system with Network delays');
 
 subplot(2,2,4);
 plot(time,u(:,1:s(2)))
@@ -174,121 +192,114 @@ close all
 % strategy 1: assuming zero value for the missing states %
 %% Strategy 1 - Using zero value for all the missed states
 % choose a random time instant %
+for duration = 1:max_duration
+    for j = 1:1:no_of_runs
+        %rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
+        rand_time_inst = ceil(Time_of_attack(j)*s(2));
+        for k = 1:s(2)
+            if k > rand_time_inst && k < rand_time_inst+duration+1
+                z([2 6 7 12],k) = 0;
+            end
+            u(:,k) = -K*z(:,k);
+            z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
+        end
 
-for j = 1:1:no_of_runs
-    rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
-    run = 0;
-    for k = 1:s(2)
-    if k > rand_time_inst && k < rand_time_inst+duration+1
-    z([2 6 7 12],k) = 0;
-    run = run +1;
-    end
-    u(:,k) = -K*z(:,k);
-       z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
-    end
+        sec_att_states = z;
 
-    sec_att_states = z;
+        %% Plots of each state
 
-    % subplot(2,3,3);
-    % plot(time,z(1:12,1:s(2)))
-    % axis manual
-    % axis(ax_limits_1);
-    % title('State Trajectory of Discrete Time Power system with security attack');
-    % 
-    % subplot(2,3,6);
-    % plot(time,u(:,1:s(2)))
-    % axis manual
-    % axis(ax_limits_2);
-    % title('Control Inputs of networked system with securtiy attack');
-    % 
-    % hold on
-    %% Plots of each state
-    
-    % Calcualate the Cost function J
-    J = calc_cost(z,u,Q,R);
-    figure;
-    for i = [1:1:12]
-    subplot(3,4,i)
-    plot(time,orig_disc_states(i,1:s(2)),'r',time,orig_net_states(i,1:s(2)),'g',time,sec_att_states(i,1:s(2)),'b');
-    %legend(' Std Discrete System','Sys with ntwrk delays', 'Sys with security attack');
-    axis manual
-    axis(ax_limits_1);
-    title_str = sprintf('state %d',i);
-    title(title_str);
-    end
-    stitle = sprintf('Strategy 1 \nIndividual States of the System \n Data loss was at %.2f seconds\n Duration of Attack is %d. The Quadratic Cost J = %d.',double(vpa(time(rand_time_inst),3)),duration,J);
-    suptitle(stitle);
-    %Code to save the figures into the Result folder
-    print([Strat1_folder '\fig' num2str(j)],'-dpng','-r300');
-    close all
-end
-
-%Code to save the figures into the Result folder
-% h = get(0,'children');
-% 
-% for i = 1:length(h)
-%     saveas(h(i),[Strat1_folder '\fig' num2str(i)],'jpeg');
-% end
-
-close all;
-%% Strategy 2 - Using the sample from previous time instant
-% choose a random time instant %
-for j = 1:1:no_of_runs
-    rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
-    run = 0;
-    for k = 1:s(2)
-    if k > rand_time_inst && k < rand_time_inst+duration+1
-    z([2 6 7 12],k) = z([2 6 7 12],k-1);
-    run = run +1;
-    end
-    u(:,k) = -K*z(:,k);
-    %     for j = 1:6
-    %         if u(j,k) >1
-    %             u(j,k) = 1;
-    %         end
-    %     end
-    z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
+        % Calcualate the Cost function J
+        J = calc_cost(z,u,Q,R);
+        Strategy_1_J(j) = J; 
+        figure;
+        for i = [1:1:12]
+            subplot(3,4,i)
+            plot(time,orig_disc_states(i,1:s(2)),'r',time,orig_net_states(i,1:s(2)),'g',time,sec_att_states(i,1:s(2)),'b');
+            %legend(' Std Discrete System','Sys with ntwrk delays', 'Sys with security attack');
+            axis manual
+            axis(ax_limits_1);
+            title_str = sprintf('state %d',i);
+            title(title_str);
+        end
+        stitle = sprintf('Strategy 1 \nIndividual States of the System \n Data loss was at %.2f seconds\n Duration of Attack is %d. The Quadratic Cost J = %d.',double(vpa(time(rand_time_inst),3)),duration,J);
+        suptitle(stitle);
+        %Code to save the figures into the Result folder
+        print([Strat1_folder '\fig' num2str(j)],'-dpng','-r300');
+        close all
     end
 
-    sec_att_states = z;
+    %% Strategy 2 - Using the sample from previous time instant
+    % choose a random time instant %
+    for j = 1:1:no_of_runs
+        %rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
+        rand_time_inst = ceil(Time_of_attack(j)*s(2));
+        for k = 1:s(2)
+            if k > rand_time_inst && k < rand_time_inst+duration+1
+                z([2 6 7 12],k) = z([2 6 7 12],k-1);
+            end
+            u(:,k) = -K*z(:,k);
+            %     for j = 1:6
+            %         if u(j,k) >1
+            %             u(j,k) = 1;
+            %         end
+            %     end
+            z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
+            end
 
-    % subplot(2,3,3);
-    % plot(time,z(1:12,1:s(2)))
-    % axis manual
-    % axis(ax_limits_1);
-    % title('State Trajectory of Discrete Time Power system with security attack');
-    % 
-    % subplot(2,3,6);
-    % plot(time,u(:,1:s(2)))
-    % axis manual
-    % axis(ax_limits_2);
-    % title('Control Inputs of networked system with securtiy attack');
-    % 
-    % hold on
-    %% Plots of each state
-    %Calcuate the Quadratic cost
-    J = calc_cost(z,u,Q,R);
-    
-    figure;
-    for i = [1:1:12]
-    subplot(3,4,i)
-    plot(time,orig_disc_states(i,1:s(2)),'r',time,orig_net_states(i,1:s(2)),'g',time,sec_att_states(i,1:s(2)),'b');
-    %legend(' Std Discrete System','Sys with ntwrk delays', 'Sys with security attack');
-    axis manual
-    axis(ax_limits_1);
-    title_str = sprintf('state %d',i);
-    title(title_str);
+        sec_att_states = z;
+
+        % subplot(2,3,3);
+        % plot(time,z(1:12,1:s(2)))
+        % axis manual
+        % axis(ax_limits_1);
+        % title('State Trajectory of Discrete Time Power system with security attack');
+        % 
+        % subplot(2,3,6);
+        % plot(time,u(:,1:s(2)))
+        % axis manual
+        % axis(ax_limits_2);
+        % title('Control Inputs of networked system with securtiy attack');
+        % 
+        % hold on
+        %% Plots of each state
+        %Calcuate the Quadratic cost
+        J = calc_cost(z,u,Q,R);
+        Strategy_2_J(j) = J;
+        Time_of_attack(j) = vpa(time(rand_time_inst)); 
+
+
+        figure;
+        for i = [1:1:12]
+            subplot(3,4,i)
+            plot(time,orig_disc_states(i,1:s(2)),'r',time,orig_net_states(i,1:s(2)),'g',time,sec_att_states(i,1:s(2)),'b');
+            %legend(' Std Discrete System','Sys with ntwrk delays', 'Sys with security attack');
+            axis manual
+            axis(ax_limits_1);
+            title_str = sprintf('state %d',i);
+            title(title_str);
+         end
+        stitle = sprintf('Strategy 2 \nIndividual States of the System \n Data loss was at %.2f seconds\n Duration of Attack is %d. The Quadratic Cost J = %d.',Time_of_attack(j),duration,J);
+        suptitle(stitle);
+
+        %Code to save the figures into the Result folder
+        print([Strat2_folder '\fig' num2str(j)],'-dpng','-r300');
+        close all
     end
-    stitle = sprintf('Strategy 2 \nIndividual States of the System \n Data loss was at %.2f seconds\n Duration of Attack is %d. The Quadratic Cost J = %d.',double(vpa(time(rand_time_inst),3)),duration,J);
-    suptitle(stitle);
-    
-    %Code to save the figures into the Result folder
-    print([Strat2_folder '\fig' num2str(j)],'-dpng','-r300');
-    close all
-end
 
+    Output_Matrix(2,:) = Time_of_attack; % Col 2 - Time of attack
+    Output_Matrix(4,:) = Strategy_1_J; % Col 4 - Strategy 1 quadratic cost
+    Output_Matrix(5,:) = Strategy_2_J; % Col 5 - Strategy 2 quadratic cost
+    Output_Matrix = Output_Matrix';
+    if Result_Matrix == 0
+        Result_Matrix = Output_Matrix;
+    else
+        Result_Matrix = [Result_Matrix;Output_Matrix];
+    end
+Header = {'Run','Time of Attack', 'Duration of Attack', 'Strategy 1 J', 'Strategy 2 J'};
 
-% h = get(0,'children');
-% for i = 1:length(h)
-%     saveas(h(i),[Strat2_folder '\fig' num2str(i)],'jpeg');
-% end
+fid = fopen(res_file,'w');
+fprintf(fid,'%s,',Header{1,1:end-1});
+fprintf(fid,'%s\n',Header{1,end-1});
+fclose(fid);
+dlmwrite(res_file,Output_Matrix,'-append');
+toc;
