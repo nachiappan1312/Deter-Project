@@ -4,9 +4,9 @@ tic;
 %Inputs
 strat1 = 'Sep1_Strat1_Run1';
 strat2 = 'Sep1_Strat2_Run1';
-duration = 1; % duration of attack
+max_duration = 1; % duration of attack
+duration = 1;
 no_of_runs = 10; % 10 different time instants
-no_of_durations = 10; % 1 - 10 samples
 res_file = 'Results_Sheet.csv';
 %Result Folders
 
@@ -20,11 +20,11 @@ Strat2_folder = strcat('Results\',strat2);
 %duration = input('Duration of Attack: ');
 %no_of_runs = input('Number of Runs: ');
 
-tot_no_of_runs = no_of_runs*no_of_durations;
+tot_no_of_runs = no_of_runs*max_duration;
 % Output matrix to excel sheet%
 Result_Matrix = zeros(tot_no_of_runs,5); % Entire Result Matrix
 
-Output_Matrix = zeros(no_of_runs,5);   % n x 5 output matrix for each duration 
+Output_Matrix = zeros(5,no_of_runs);   % n x 5 output matrix for each duration 
 Output_Matrix(1,:) = 1:1:no_of_runs;   % col 1 - No of  runs 
 Time_of_attack =  0.1:(0.8-0.1)/(no_of_runs-1):0.8;  %Time of attack is equally spread among 0.1 and 0.8
 Output_Matrix(2,:) = Time_of_attack; % Col 2 - Time of attack
@@ -287,6 +287,7 @@ for duration = 1:max_duration
     end
 
     Output_Matrix(2,:) = Time_of_attack; % Col 2 - Time of attack
+    Output_Matrix(3,:) = duration*ones(no_of_runs,1); % Col 2 - Time of attack
     Output_Matrix(4,:) = Strategy_1_J; % Col 4 - Strategy 1 quadratic cost
     Output_Matrix(5,:) = Strategy_2_J; % Col 5 - Strategy 2 quadratic cost
     Output_Matrix = Output_Matrix';
@@ -295,6 +296,7 @@ for duration = 1:max_duration
     else
         Result_Matrix = [Result_Matrix;Output_Matrix];
     end
+end
 Header = {'Run','Time of Attack', 'Duration of Attack', 'Strategy 1 J', 'Strategy 2 J'};
 
 fid = fopen(res_file,'w');
