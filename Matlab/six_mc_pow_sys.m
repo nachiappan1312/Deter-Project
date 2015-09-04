@@ -2,12 +2,11 @@ clc;clear all;
 close all;
 tic;
 %Inputs
-strat1 = 'Sep1_Strat1_Run1';
-strat2 = 'Sep1_Strat2_Run1';
-max_duration = 1; % duration of attack
-duration = 1;
+strat1 = 'Sep4_Strat1_Run1'; strat2 = 'Sep4_Strat2_Run1';
+max_duration = 10; % duration of attack
+duration = 1;     % Initial Duration   
 no_of_runs = 10; % 10 different time instants
-res_file = 'Results_Sheet.csv';
+res_file = 'Results_Sheet_Sep4_Run1.csv';
 %Result Folders
 
 %Par_folder = input('Result Folder Name :','s');
@@ -22,6 +21,7 @@ Strat2_folder = strcat('Results\',strat2);
 
 tot_no_of_runs = no_of_runs*max_duration;
 % Output matrix to excel sheet%
+
 Result_Matrix = zeros(tot_no_of_runs,5); % Entire Result Matrix
 
 Output_Matrix = zeros(5,no_of_runs);   % n x 5 output matrix for each duration 
@@ -30,10 +30,17 @@ Time_of_attack =  0.1:(0.8-0.1)/(no_of_runs-1):0.8;  %Time of attack is equally 
 Output_Matrix(2,:) = Time_of_attack; % Col 2 - Time of attack
 duration_of_attack = duration *ones(no_of_runs,1);  % Duration of attack - No of samples
 Output_Matrix(3,:) = duration_of_attack; % Col 3 - Duration of attack
+
 Strategy_1_J = zeros(no_of_runs,1); 
-Output_Matrix(4,:) = Time_of_attack; % Col 4 - Strategy 1 quadratic cost
+Output_Matrix(4,:) = Strategy_1_J; % Col 4 - Strategy 1 quadratic cost
 Strategy_2_J = zeros(no_of_runs,1); 
-Output_Matrix(4,:) = Time_of_attack; % Col 5 - Strategy 2 quadratic cost
+Output_Matrix(5,:) = Strategy_2_J; % Col 5 - Strategy 2 quadratic cost
+
+Strategy_1_SU = zeros(no_of_runs,1); 
+Output_Matrix(6,:) = Strategy_1_SU; % Col 4 - Strategy 1 quadratic cost
+Strategy_2_SU = zeros(no_of_runs,1); 
+Output_Matrix(7,:) = Strategy_2_SU; % Col 5 - Strategy 2 quadratic cost
+
 
 %Figure axis limit properties
 ax_limits_1 = [0 12 -0.3 0.3];
@@ -182,7 +189,7 @@ axis(ax_limits_2);
 title('Control Inputs of networked system');
 
 %Code to save the figures into the Result folder
-print([Strat1_folder '\state_trajectory'],'-dpng','-r300');
+print([Strat1_folder '\fig_''\state_trajectory'],'-dpng','-r300');
 close all
 
 %% Network simulation with the attacks
@@ -198,9 +205,13 @@ for duration = 1:max_duration
         rand_time_inst = ceil(Time_of_attack(j)*s(2));
         for k = 1:s(2)
             if k > rand_time_inst && k < rand_time_inst+duration+1
-                z([2 6 7 12],k) = 0;
+                u(:,k) = -K*z(:,k);
+                z1=z;
+                z1([2 6 7 12],k) = 0;
+                u1 = -K*z1(:,k);
+                u([1 6],k) = u1([1 6],:);
             end
-            u(:,k) = -K*z(:,k);
+            %u(:,k) = -K*z(:,k);
             z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
         end
 
@@ -209,8 +220,9 @@ for duration = 1:max_duration
         %% Plots of each state
 
         % Calcualate the Cost function J
-        J = calc_cost(z,u,Q,R);
-        Strategy_1_J(j) = J; 
+        [J,SU] = calc_cost(z,u,Q,R);
+        Strategy_1_J(j) = J;
+        Strategy_1_SU(j) = SU;
         figure;
         for i = [1:1:12]
             subplot(3,4,i)
@@ -224,7 +236,7 @@ for duration = 1:max_duration
         stitle = sprintf('Strategy 1 \nIndividual States of the System \n Data loss was at %.2f seconds\n Duration of Attack is %d. The Quadratic Cost J = %d.',double(vpa(time(rand_time_inst),3)),duration,J);
         suptitle(stitle);
         %Code to save the figures into the Result folder
-        print([Strat1_folder '\fig' num2str(j)],'-dpng','-r300');
+        print([Strat1_folder '\fig_' num2str(duration) '_'  num2str(j)],'-dpng','-r300');
         close all
     end
 
@@ -233,16 +245,15 @@ for duration = 1:max_duration
     for j = 1:1:no_of_runs
         %rand_time_inst = ceil(vpa(rand(1,1),2)*s(2)/2);
         rand_time_inst = ceil(Time_of_attack(j)*s(2));
+        
         for k = 1:s(2)
-            if k > rand_time_inst && k < rand_time_inst+duration+1
-                z([2 6 7 12],k) = z([2 6 7 12],k-1);
-            end
             u(:,k) = -K*z(:,k);
-            %     for j = 1:6
-            %         if u(j,k) >1
-            %             u(j,k) = 1;
-            %         end
-            %     end
+            if k > rand_time_inst && k < rand_time_inst+duration+1
+                
+                z([2 6 7 12],k) = z([2 6 7 12],k-1);
+                u1 = -K*z(:,k);
+                u([1 6],k) = u1([1 6],:);
+            end
             z(:,k+1) = Af*z(:,k)+Bf*u(:,k);
             end
 
@@ -263,9 +274,10 @@ for duration = 1:max_duration
         % hold on
         %% Plots of each state
         %Calcuate the Quadratic cost
-        J = calc_cost(z,u,Q,R);
+        [J,SU] = calc_cost(z,u,Q,R);
         Strategy_2_J(j) = J;
-        Time_of_attack(j) = vpa(time(rand_time_inst)); 
+        Strategy_2_SU(j) = SU;
+        Report_Time_Inst(j) = vpa(time(rand_time_inst)); 
 
 
         figure;
@@ -282,26 +294,28 @@ for duration = 1:max_duration
         suptitle(stitle);
 
         %Code to save the figures into the Result folder
-        print([Strat2_folder '\fig' num2str(j)],'-dpng','-r300');
+        print([Strat2_folder '\fig_' num2str(duration) '_' num2str(j)],'-dpng','-r300');
         close all
     end
 
-    Output_Matrix(2,:) = Time_of_attack; % Col 2 - Time of attack
+    Output_Matrix(2,:) = Report_Time_Inst; % Col 2 - Time of attack
     Output_Matrix(3,:) = duration*ones(no_of_runs,1); % Col 2 - Time of attack
     Output_Matrix(4,:) = Strategy_1_J; % Col 4 - Strategy 1 quadratic cost
     Output_Matrix(5,:) = Strategy_2_J; % Col 5 - Strategy 2 quadratic cost
-    Output_Matrix = Output_Matrix';
+    Output_Matrix(6,:) = Strategy_1_SU; % Col 6 - Strategy 1 State Energy/Input Energy
+    Output_Matrix(7,:) = Strategy_2_SU; % Col 7 - Strategy 2 State Energy/Input Energy
+ 
     if Result_Matrix == 0
-        Result_Matrix = Output_Matrix;
+        Result_Matrix = Output_Matrix';
     else
-        Result_Matrix = [Result_Matrix;Output_Matrix];
+        Result_Matrix = [Result_Matrix;Output_Matrix'];
     end
 end
-Header = {'Run','Time of Attack', 'Duration of Attack', 'Strategy 1 J', 'Strategy 2 J'};
+Header = {'Run','Time of Attack', 'Duration of Attack', 'Strategy 1 J', 'Strategy 2 J', 'Strategy 1 S/U', 'Strategy 2 S/U'};
 
 fid = fopen(res_file,'w');
 fprintf(fid,'%s,',Header{1,1:end-1});
 fprintf(fid,'%s\n',Header{1,end-1});
 fclose(fid);
-dlmwrite(res_file,Output_Matrix,'-append');
+dlmwrite(res_file,Result_Matrix,'-append');
 toc;
